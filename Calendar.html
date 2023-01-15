@@ -1,0 +1,182 @@
+<html>
+  <head>
+    <style>
+        body {
+          margin: 0;
+        }
+        * {
+          font-family: "Cochin";
+          font-size: 16pt;
+        }
+        .month {
+          text-align: center;
+          margin: auto;
+          page-break-inside: avoid;
+        }
+        .month caption {
+          font-size: 26pt;
+          font-weight: bold;
+          height: 1in;
+          line-height: 0.8in;
+        }
+        .month tr {
+        }
+        .month th {
+          font-weight: normal;
+        }
+        .month td {
+          width: 1in;
+          height: 1in;
+        }
+        .month .other-month {
+          color: #fcfcfc;
+          font-weight: light;
+        }
+        .page-square {
+          height: 7.75in;
+          border-bottom: 1px solid #f0f0f0;
+          padding: 0;
+          margin: 0;
+        }
+    </style>
+    <script type="text/javascript">
+      const MonthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      const WeekDayNames = ["Sun.", "Mon.", "Tues.", "Weds.", "Thurs.", "Fri.", "Sat."];
+
+      function getYearForCalendar() {
+        now = new Date();
+        // Show next year's calendar starting in December.
+        // Month numbers are 0-based, so 11 means December.
+        if (now.getMonth() >= 11) {
+          return now.getFullYear() + 1;
+        } else {
+          return now.getFullYear();
+        }
+      }
+
+      function getMonthStartDayOfWeek(year, month) {
+        var firstDayOfMonth = new Date(year, month);
+        return firstDayOfMonth.getDay();
+      }
+
+      function getEndDayOfMonth(year, month) {
+        // Try all of the possible month end dates until we find the end date
+        // for the specified month.
+        for (var dayOfMonth = 31; dayOfMonth >= 28; dayOfMonth--) {
+          const possibleLastDayOfMonth = new Date(year, month, dayOfMonth);
+          if (possibleLastDayOfMonth.getMonth() == month) {
+            return possibleLastDayOfMonth.getDate();
+          }
+        }
+      }
+
+      function createWeekHeaderRow() {
+        // Constructs "<tr><th>Sun.</th><th>Mon.</th>...<th>Sat.</th></tr>"
+        var tr = document.createElement("tr");
+        for (dayName of WeekDayNames) {
+          var th = document.createElement("th");
+          th.textContent = dayName;
+          tr.appendChild(th);
+        }
+        return tr
+      }
+
+      function createFirstWeekRow(prevMonthEndDayOfMonth, monthStartDayOfWeek) {
+        var tr = document.createElement("tr");
+        // Start off with the day of last month that falls on Sunday of this week.
+        // If monthStartDayOfWeek == 0, then dayOfMonth > prevMonthEndDayOfMonth,
+        // in which case we won't show any days from last month.
+        var dayOfMonth = prevMonthEndDayOfMonth + 1 - monthStartDayOfWeek;
+        var inPrevMonth = true;
+        // Insert the days of the month corresponding to the days of the week.
+        for (var dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+          // Check if we're now in the current month.
+          if (inPrevMonth && (dayOfMonth > prevMonthEndDayOfMonth)) {
+            dayOfMonth = 1;
+            inPrevMonth = false;
+          }
+          // Add a day of the month <td>
+          var td = document.createElement("td");
+          td.textContent = dayOfMonth.toString();
+          if (inPrevMonth) {
+            td.className = "other-month";
+          }
+          tr.appendChild(td);
+          dayOfMonth++;
+        }
+        return tr;
+      }
+
+      function createWeekRow(weekStartDayOfMonth, monthEndDayOfMonth) {
+        var tr = document.createElement("tr");
+        var dayOfMonth = weekStartDayOfMonth;
+        var inNextMonth = false;
+        // Insert the days of the month corresponding to the days of the week.
+        for (var dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+          // Add a day of the month <td>
+          var td = document.createElement("td");
+          td.textContent = dayOfMonth.toString();
+          if (inNextMonth) {
+            td.className = "other-month";
+          }
+          tr.appendChild(td);
+          // Go on to the next day (which may go into the next month).
+          dayOfMonth++;
+          if (!inNextMonth && (dayOfMonth > monthEndDayOfMonth)) {
+            dayOfMonth = 1;
+            inNextMonth = true;
+          }
+        }
+        return tr;
+      }
+
+      function createCalendarForMonth(year, month) {
+        // <table class="month">
+        var table = document.createElement("table");
+        table.className = "month";
+        // Caption: the month name
+        var caption = document.createElement("caption");
+        caption.textContent = MonthNames[month];
+        table.appendChild(caption);
+        // Table body
+        var tbody = document.createElement("tbody");
+        table.appendChild(tbody);
+        // Sun. Mon. ... Sat.
+        tbody.appendChild(createWeekHeaderRow());
+        // Table of days of the month, with days from the previous and next months grayed.
+        const prevMonth = (month + 12 - 1) % 12;
+        const prevMonthEndDayOfMonth = getEndDayOfMonth(year, prevMonth);
+        const monthStartDayOfWeek = getMonthStartDayOfWeek(year, month);
+        const monthEndDayOfMonth = getEndDayOfMonth(year, month);
+        // First row of days is dealt with separately, since it may include days from
+        // the previous month.
+        tbody.appendChild(createFirstWeekRow(prevMonthEndDayOfMonth, monthStartDayOfWeek));
+        // The rest of the days of the month.
+        var weekStartDayOfMonth = 8 - monthStartDayOfWeek;
+        while (weekStartDayOfMonth <= monthEndDayOfMonth) {
+          tbody.appendChild(createWeekRow(weekStartDayOfMonth, monthEndDayOfMonth));
+          weekStartDayOfMonth += 7;
+        }
+        return table;
+      }
+
+      function createCalendarPageForMonth(year, month) {
+        var calendarForMonth = createCalendarForMonth(year, month);
+        var pageSquare = document.createElement("div");
+        pageSquare.className = "page-square";
+        pageSquare.appendChild(calendarForMonth);
+        return pageSquare;
+      }
+    </script>
+  </head>
+  <body>
+  </body>
+  <script type="text/javascript">
+    var year = getYearForCalendar();
+    for (var month = 0; month < 12; month++) {
+      var calendarPageForMonth = createCalendarPageForMonth(year, month);
+      document.body.appendChild(calendarPageForMonth);
+    }
+  </script>
+</html>
+
